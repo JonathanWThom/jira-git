@@ -29,21 +29,21 @@ func Run(args []string) error {
 	if len(args) != 2 {
 		return errors.New("Please pass Issue URL as argument")
 	}
-	issueId, err := getIssueId(os.Args[1])
+	issueID, err := getIssueID(os.Args[1])
 	if err != nil {
 		return err
 	}
 
-	summary, err := getIssueSummary(issueId)
+	summary, err := getIssueSummary(issueID)
 	if err != nil {
 		return err
 	}
 
-	return checkoutNewBranch(issueId, summary)
+	return checkoutNewBranch(issueID, summary)
 }
 
-func getIssueId(arg string) (string, error) {
-	url, err := url.Parse(arg)
+func getIssueID(uri string) (string, error) {
+	url, err := url.Parse(uri)
 	if err != nil {
 		return "", err
 	}
