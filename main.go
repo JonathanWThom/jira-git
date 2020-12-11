@@ -84,6 +84,7 @@ type jiraClient struct {
 	client *jira.Client
 }
 
+// Tell me to tell you about functional parameters. It's a nice way to add mutliple configuration, and having nice defaults
 func newJiraClient(email, apiToken string) (*jiraClient, error) {
 	tp := jira.BasicAuthTransport{
 		Username: email,
