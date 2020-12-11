@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
@@ -54,8 +55,14 @@ func getIssueId(args []string) (string, error) {
 }
 
 func checkoutNewBranch(id, summary string) error {
-	dashedSummary := strings.ToLower(strings.ReplaceAll(summary, " ", "-"))
-	branchName := fmt.Sprintf("%s--%s", id, dashedSummary)
+	reg, err := regexp.Compile("[^a-zA-Z0-9 ]+")
+	if err != nil {
+		return err
+	}
+	sanitized := reg.ReplaceAllString(summary, "")
+	dashed := strings.ToLower(strings.ReplaceAll(sanitized, " ", "-"))
+	branchName := fmt.Sprintf("%s--%s", id, dashed)
+	fmt.Println(branchName)
 	// Could maybe stash here first?
 	cmd := exec.Command("git", "checkout", "-b", branchName)
 
