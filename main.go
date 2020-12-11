@@ -40,7 +40,12 @@ func Run(args []string) error {
 		return err
 	}
 
-	summary, err := getIssueSummary(issueID)
+	jc, err := newJiraClient(email, apiToken)
+	if err != nil {
+		return err
+	}
+
+	summary, err := jc.GetIssueSummary(issueID)
 	if err != nil {
 		return err
 	}
@@ -75,17 +80,26 @@ func checkoutNewBranch(id, summary string) error {
 	return cmd.Run()
 }
 
-func getIssueSummary(id string) (string, error) {
+type jiraClient struct {
+	client *jira.Client
+}
+
+func newJiraClient(email, apiToken string) (*jiraClient, error) {
 	tp := jira.BasicAuthTransport{
 		Username: email,
 		Password: apiToken,
 	}
-
 	client, err := jira.NewClient(tp.Client(), baseUrl)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	issue, _, err := client.Issue.Get(id, nil)
+	return &jiraClient{
+		client: client,
+	}, nil
+}
+
+func (c *jiraClient) GetIssueSummary(id string) (string, error) {
+	issue, _, err := c.client.Issue.Get(id, nil)
 	if err != nil {
 		return "", err
 	}
