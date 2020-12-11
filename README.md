@@ -23,7 +23,7 @@ This will run `git checkout -b TEAM-1234--summary-of-your-ticket`.
   export ATLASSIAN_EMAIL=email-you-use-to-login@domain.com
   ```
 4. Clone this, `cd` in, and `go install`. Ideally the `jira-git` command will
-   not be somewhere in your `PATH`.
+   now be somewhere in your `PATH`.
 
 ### License
 
