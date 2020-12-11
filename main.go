@@ -49,6 +49,10 @@ func getIssueID(uri string) (string, error) {
 	}
 	paths := strings.Split(url.Path, "/")
 
+	// Probably want to handle invalid urls here
+	// Something that might return 0 paths....
+	// We'll get to testing soon
+
 	return paths[len(paths)-1], nil
 }
 
