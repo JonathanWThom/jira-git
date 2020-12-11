@@ -56,11 +56,9 @@ func getIssueID(uri string) (string, error) {
 	return paths[len(paths)-1], nil
 }
 
+var reg = regexp.MustCompile("[^a-zA-Z0-9 ]+")
+
 func checkoutNewBranch(id, summary string) error {
-	reg, err := regexp.Compile("[^a-zA-Z0-9 ]+")
-	if err != nil {
-		return err
-	}
 	sanitized := reg.ReplaceAllString(summary, "")
 	dashed := strings.ToLower(strings.ReplaceAll(sanitized, " ", "-"))
 	branchName := fmt.Sprintf("%s--%s", id, dashed)
