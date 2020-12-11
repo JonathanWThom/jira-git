@@ -29,6 +29,12 @@ func Run(args []string) error {
 	if len(args) != 2 {
 		return errors.New("Please pass Issue URL as argument")
 	}
+	for _, param := range []string{apiToken, baseUrl, email} {
+		if param == "" {
+			return errors.New("Please set all environment variables")
+		}
+	}
+
 	issueID, err := getIssueID(os.Args[1])
 	if err != nil {
 		return err
@@ -64,18 +70,12 @@ func checkoutNewBranch(id, summary string) error {
 	branchName := fmt.Sprintf("%s--%s", id, dashed)
 	fmt.Println(branchName)
 	// Could maybe stash here first?
-	cmd := exec.Command("git", "checkout", "-b", branchName)
+	cmd := exec.Command("git", "checkout", "-b", branchName) // This could probably be replaced with something like `git-go` to avoid shelling out
 
 	return cmd.Run()
 }
 
 func getIssueSummary(id string) (string, error) {
-	for _, param := range []string{apiToken, baseUrl, email} {
-		if param == "" {
-			return "", errors.New("Please set all environment variables")
-		}
-	}
-
 	tp := jira.BasicAuthTransport{
 		Username: email,
 		Password: apiToken,
