@@ -20,13 +20,16 @@ var (
 )
 
 func main() {
-	if err := Run(); err != nil {
+	if err := Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func Run() error {
-	issueId, err := getIssueId(os.Args)
+func Run(args []string) error {
+	if len(args) != 2 {
+		return errors.New("Please pass Issue URL as argument")
+	}
+	issueId, err := getIssueId(os.Args[1])
 	if err != nil {
 		return err
 	}
@@ -39,13 +42,8 @@ func Run() error {
 	return checkoutNewBranch(issueId, summary)
 }
 
-func getIssueId(args []string) (string, error) {
-	if len(os.Args) != 2 {
-		return "", errors.New("Please pass Issue URL as argument")
-	}
-
-	raw := os.Args[1]
-	url, err := url.Parse(raw)
+func getIssueId(arg string) (string, error) {
+	url, err := url.Parse(arg)
 	if err != nil {
 		return "", err
 	}
