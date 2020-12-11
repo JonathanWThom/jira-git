@@ -1,0 +1,87 @@
+package main
+
+import (
+	"errors"
+	"fmt"
+	"log"
+	"net/url"
+	"os"
+	"os/exec"
+	"strings"
+
+	jira "github.com/andygrunwald/go-jira"
+)
+
+var (
+	apiToken = os.Getenv("ATLASSIAN_API_TOKEN")
+	baseUrl  = os.Getenv("ATLASSIAN_BASE_URL")
+	email    = os.Getenv("ATLASSIAN_EMAIL")
+)
+
+func main() {
+	if err := Run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func Run() error {
+	issueId, err := getIssueId(os.Args)
+	if err != nil {
+		return err
+	}
+
+	summary, err := getIssueSummary(issueId)
+	if err != nil {
+		return err
+	}
+
+	return checkoutNewBranch(issueId, summary)
+}
+
+func getIssueId(args []string) (string, error) {
+	if len(os.Args) != 2 {
+		return "", errors.New("Please pass Issue URL as argument")
+	}
+
+	raw := os.Args[1]
+	url, err := url.Parse(raw)
+	if err != nil {
+		return "", err
+	}
+	paths := strings.Split(url.Path, "/")
+
+	return paths[len(paths)-1], nil
+}
+
+func checkoutNewBranch(id, summary string) error {
+	dashedSummary := strings.ToLower(strings.ReplaceAll(summary, " ", "-"))
+	branchName := fmt.Sprintf("%s--%s", id, dashedSummary)
+	// Could maybe stash here first?
+	cmd := exec.Command("git", "checkout", "-b", branchName)
+
+	return cmd.Run()
+}
+
+func getIssueSummary(id string) (string, error) {
+	for _, param := range []string{apiToken, baseUrl, email} {
+		if param == "" {
+			return "", errors.New("Please set all environment variables")
+		}
+	}
+
+	tp := jira.BasicAuthTransport{
+		Username: email,
+		Password: apiToken,
+	}
+
+	client, err := jira.NewClient(tp.Client(), baseUrl)
+	if err != nil {
+		return "", err
+	}
+	issue, _, err := client.Issue.Get(id, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return issue.Fields.Summary, nil
+}
