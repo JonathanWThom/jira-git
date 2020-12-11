@@ -43,7 +43,7 @@ func Run(args []string) error {
 }
 
 func getIssueID(uri string) (string, error) {
-	url, err := url.Parse(uri)
+	url, err := url.ParseRequestURI(uri)
 	if err != nil {
 		return "", err
 	}
