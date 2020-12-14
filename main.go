@@ -15,7 +15,7 @@ import (
 
 var (
 	apiToken = os.Getenv("ATLASSIAN_API_TOKEN")
-	baseUrl  = os.Getenv("ATLASSIAN_BASE_URL")
+	baseURL  = os.Getenv("ATLASSIAN_BASE_URL")
 	email    = os.Getenv("ATLASSIAN_EMAIL")
 )
 
@@ -29,7 +29,7 @@ func Run(args []string) error {
 	if len(args) != 2 {
 		return errors.New("Please pass Issue URL as argument")
 	}
-	for _, param := range []string{apiToken, baseUrl, email} {
+	for _, param := range []string{apiToken, baseURL, email} {
 		if param == "" {
 			return errors.New("Please set all environment variables")
 		}
