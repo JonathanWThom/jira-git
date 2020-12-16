@@ -15,7 +15,7 @@ import (
 
 var (
 	apiToken = os.Getenv("ATLASSIAN_API_TOKEN")
-	baseUrl  = os.Getenv("ATLASSIAN_BASE_URL")
+	baseURL  = os.Getenv("ATLASSIAN_BASE_URL")
 	email    = os.Getenv("ATLASSIAN_EMAIL")
 )
 
@@ -26,21 +26,25 @@ func main() {
 }
 
 func Run(args []string) error {
+	b, err := url.ParseRequestURI(baseURL)
+	if err != nil {
+		return fmt.Errorf("could not parse ATLASSIAN_BASE_URL: %w", err)
+	}
 	if len(args) != 2 {
 		return errors.New("Please pass Issue URL as argument")
 	}
-	for _, param := range []string{apiToken, baseUrl, email} {
+	for _, param := range []string{apiToken, email} {
 		if param == "" {
 			return errors.New("Please set all environment variables")
 		}
 	}
 
-	issueID, err := getIssueID(os.Args[1])
+	issueID, err := getIssueID(args[1])
 	if err != nil {
 		return err
 	}
 
-	jc, err := newJiraClient(email, apiToken)
+	jc, err := newJiraClient(b, email, apiToken)
 	if err != nil {
 		return err
 	}
@@ -50,7 +54,20 @@ func Run(args []string) error {
 		return err
 	}
 
-	return checkoutNewBranch(issueID, summary)
+	branchName := createBranchName(issueID, summary)
+
+	if err := checkoutNewBranch(branchName); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func createBranchName(id string, summary string) string {
+	sanitized := reg.ReplaceAllString(summary, "")
+	sanitized = strings.Trim(sanitized, " ")
+	dashed := strings.ToLower(strings.ReplaceAll(sanitized, " ", "-"))
+	return fmt.Sprintf("%s--%s", id, dashed)
 }
 
 func getIssueID(uri string) (string, error) {
@@ -69,13 +86,11 @@ func getIssueID(uri string) (string, error) {
 
 var reg = regexp.MustCompile("[^a-zA-Z0-9 ]+")
 
-func checkoutNewBranch(id, summary string) error {
-	sanitized := reg.ReplaceAllString(summary, "")
-	dashed := strings.ToLower(strings.ReplaceAll(sanitized, " ", "-"))
-	branchName := fmt.Sprintf("%s--%s", id, dashed)
-	fmt.Println(branchName)
+func checkoutNewBranch(branchName string) error {
 	// Could maybe stash here first?
 	cmd := exec.Command("git", "checkout", "-b", branchName) // This could probably be replaced with something like `git-go` to avoid shelling out
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
 	return cmd.Run()
 }
@@ -85,12 +100,14 @@ type jiraClient struct {
 }
 
 // Tell me to tell you about functional parameters. It's a nice way to add mutliple configuration, and having nice defaults
-func newJiraClient(email, apiToken string) (*jiraClient, error) {
+func newJiraClient(baseURL *url.URL, email, apiToken string) (*jiraClient, error) {
 	tp := jira.BasicAuthTransport{
 		Username: email,
 		Password: apiToken,
 	}
-	client, err := jira.NewClient(tp.Client(), baseUrl)
+	cl := tp.Client()
+
+	client, err := jira.NewClient(cl, baseURL.String())
 	if err != nil {
 		return nil, err
 	}
